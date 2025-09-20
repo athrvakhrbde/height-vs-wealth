@@ -7,7 +7,7 @@
     <meta name="description" content="Interactive visualization of famous wealthy people's height vs wealth distribution">
     <script src="js/chart.min.js"></script>
     <script src="js/papaparse.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=3">
+    <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
     <div class="container">
@@ -83,7 +83,7 @@
         <span class="btn-text">Calculate your success</span>
     </button>
 
-    <!-- Vercel-optimized Script -->
+    <!-- Embedded Data and Script -->
     <script>
 // Embedded Data
 var embeddedData = [
@@ -498,53 +498,215 @@ function initializePieChart() {
     ];
     
     new Chart(ctx, {
-  {
-    "name": "Robert Howard",
-    "wealth": 10234.0,
-    "height": 5.77,
-    "status": "Deceased",
-    "source": "Transportation"
-  },
-  {
-    "name": "Christian Olson",
-    "wealth": 10233.0,
-    "height": 6.22,
-    "status": "Living",
-    "source": "Entertainment"
-  },
-  {
-    "name": "Martin Fisher",
-    "wealth": 10204.0,
-    "height": 6.37,
-    "status": "Living",
-    "source": "Pharmaceuticals"
-  },
-  {
-    "name": "Richard Ruiz",
-    "wealth": 10173.0,
-    "height": 5.32,
-    "status": "Deceased",
-    "source": "Agriculture"
-  },
-  {
-    "name": "Ronald Lopez",
-    "wealth": 10173.0,
-    "height": 6.62,
-    "status": "Living",
-    "source": "Real Estate"
-  },
-  {
-    "name": "Victor I. Dixon",
-    "wealth": 10143.0,
-    "height": 6.62,
-    "status": "Living",
-    "source": "Agriculture"
-  },
-  {
-    "name": "Ronald Armstrong",
-    "wealth": 10038.0,
-    "height": 6.45,
-    "status": "Deceased",
-    "source": "Retail"
-  }
-];
+        type: 'pie',
+        data: {
+            labels: chartData.map(item => item.label),
+            datasets: [{
+                data: chartData.map(item => item.value),
+                backgroundColor: colors.slice(0, chartData.length),
+                borderColor: colors.slice(0, chartData.length).map(color => color.replace('0.8', '1')),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Wealth Distribution by Height',
+                    font: {
+                        family: 'Helvetica Neue, Helvetica, Arial, sans-serif',
+                        size: 18,
+                        weight: 'bold'
+                    },
+                    color: '#ffffff',
+                    padding: 20
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: {
+                        font: {
+                            family: 'Helvetica Neue, Helvetica, Arial, sans-serif'
+                        },
+                        color: '#ffffff',
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const item = chartData[context.dataIndex];
+                            const wealthFormatted = new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            }).format(item.value);
+                            
+                            const percentage = ((item.value / chartData.reduce((sum, d) => sum + d.value, 0)) * 100).toFixed(1);
+                            
+                            return [
+                                `${item.label}`,
+                                `Wealth: ${wealthFormatted}`,
+                                `People: ${item.count}`,
+                                `Percentage: ${percentage}%`
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    console.log('✅ Pie chart initialized successfully');
+}
+
+// Initialize success calculator
+function initializeSuccessCalculator() {
+    console.log('🧮 Initializing success calculator...');
+    
+    const floatingBtn = document.getElementById('floatingCalculatorBtn');
+    const calculateBtn = document.getElementById('calculateSuccess');
+    const heightSelect = document.getElementById('heightSelect');
+    
+    // Floating button click handler
+    if (floatingBtn) {
+        floatingBtn.addEventListener('click', function() {
+            document.querySelector('.success-calculator-section').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+    }
+    
+    // Calculate button click handler
+    if (calculateBtn && heightSelect) {
+        calculateBtn.addEventListener('click', function() {
+            const selectedHeight = heightSelect.value;
+            if (selectedHeight) {
+                calculateSuccessProbability(parseFloat(selectedHeight));
+            } else {
+                alert('Please select your height first.');
+            }
+        });
+    }
+    
+    console.log('✅ Success calculator initialized');
+}
+
+// Calculate success probability
+function calculateSuccessProbability(userHeight) {
+    if (!globalWealthData) {
+        console.error('No wealth data available');
+        return;
+    }
+    
+    const heightBin = Math.round(userHeight * 10) / 10;
+    const density = globalWealthData.densityMap[heightBin] || 0;
+    const topNames = globalWealthData.topNamesByHeight[heightBin] || [];
+    
+    // Calculate success percentage
+    const successPercentage = Math.round(density * 100);
+    
+    // Generate result
+    let resultHTML = '';
+    
+    if (successPercentage >= 80) {
+        resultHTML = `
+            <div class="success-result-content excellent">
+                <div class="success-emoji">🚀</div>
+                <h3>Excellent Success Potential</h3>
+                <div class="success-percentage excellent">${successPercentage}%</div>
+                <p>Your height of ${userHeight}ft is associated with exceptional wealth potential!</p>
+                ${topNames.length > 0 ? `<p><strong>Top 3 wealthiest at your height:</strong> ${topNames.join(', ')}</p>` : ''}
+            </div>
+        `;
+    } else if (successPercentage >= 60) {
+        resultHTML = `
+            <div class="success-result-content great">
+                <div class="success-emoji">💪</div>
+                <h3>Great Success Potential</h3>
+                <div class="success-percentage great">${successPercentage}%</div>
+                <p>Your height of ${userHeight}ft shows strong wealth potential!</p>
+                ${topNames.length > 0 ? `<p><strong>Top 3 wealthiest at your height:</strong> ${topNames.join(', ')}</p>` : ''}
+            </div>
+        `;
+    } else if (successPercentage >= 40) {
+        resultHTML = `
+            <div class="success-result-content good">
+                <div class="success-emoji">⭐</div>
+                <h3>Good Success Potential</h3>
+                <div class="success-percentage good">${successPercentage}%</div>
+                <p>Your height of ${userHeight}ft has decent wealth potential!</p>
+                ${topNames.length > 0 ? `<p><strong>Top 3 wealthiest at your height:</strong> ${topNames.join(', ')}</p>` : ''}
+            </div>
+        `;
+    } else if (successPercentage >= 20) {
+        resultHTML = `
+            <div class="success-result-content moderate">
+                <div class="success-emoji">🎯</div>
+                <h3>Moderate Success Potential</h3>
+                <div class="success-percentage moderate">${successPercentage}%</div>
+                <p>Your height of ${userHeight}ft has some wealth potential!</p>
+                ${topNames.length > 0 ? `<p><strong>Top 3 wealthiest at your height:</strong> ${topNames.join(', ')}</p>` : ''}
+            </div>
+        `;
+    } else {
+        resultHTML = `
+            <div class="success-result-content low">
+                <div class="success-emoji">🌱</div>
+                <h3>Growing Success Potential</h3>
+                <div class="success-percentage low">${successPercentage}%</div>
+                <p>Your height of ${userHeight}ft has room for growth!</p>
+                ${topNames.length > 0 ? `<p><strong>Top 3 wealthiest at your height:</strong> ${topNames.join(', ')}</p>` : ''}
+            </div>
+        `;
+    }
+    
+    // Add "How it's calculated" button
+    resultHTML += `
+        <div class="calculation-info">
+            <a href="https://matiks.com" target="_blank" class="calculation-link">
+                How it's calculated
+            </a>
+        </div>
+    `;
+    
+    // Display result
+    const resultDiv = document.getElementById('successResult');
+    if (resultDiv) {
+        resultDiv.innerHTML = resultHTML;
+        resultDiv.style.display = 'block';
+    }
+}
+
+// Error handling
+function showError(message) {
+    console.error(message);
+    const container = document.querySelector('.container');
+    if (container) {
+        container.innerHTML = `
+            <div style="color: #ff6b6b; text-align: center; padding: 50px; font-family: Helvetica Neue, Helvetica, Arial, sans-serif;">
+                <h2>Error</h2>
+                <p>${message}</p>
+                <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 20px; background: #4ade80; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    Reload Page
+                </button>
+            </div>
+        `;
+    }
+}
+    </script>
+</body>
+</html>
