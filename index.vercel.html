@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Co-relation between height & wealth/fame</title>
+    <meta name="description" content="Interactive visualization of famous wealthy people's height vs wealth distribution">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <link rel="stylesheet" href="styles.css?v=3">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">Co-relation between height & wealth/fame</h1>
+        </header>
+
+        <main class="main-content">
+            <div class="charts-grid">
+                <!-- Scatter Plot Chart -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h2 class="chart-title">Height vs. Wealth</h2>
+                        <p class="chart-description">Each dot represents a wealthy individual. Color intensity shows wealth density at that height.</p>
+                    </div>
+                    <canvas id="wealthChart" width="800" height="400"></canvas>
+                </div>
+
+                <!-- Pie Chart -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h2 class="chart-title">Wealth Distribution by Height</h2>
+                        <p class="chart-description">Percentage of total wealth held by people of different heights.</p>
+                    </div>
+                    <canvas id="pieChart" width="600" height="400"></canvas>
+                </div>
+            </div>
+
+            <!-- Success Calculator Section -->
+            <div class="success-calculator-section">
+                <div class="calculator-container">
+                    <h2 class="calculator-title">Calculate Your Success Probability</h2>
+                    <div class="calculator-form">
+                        <div class="input-group">
+                            <label for="heightSelect">Select your height:</label>
+                            <div class="height-input-wrapper">
+                                <select id="heightSelect" class="height-dropdown">
+                                    <option value="">Choose your height</option>
+                                    <option value="4.9">4'9"</option>
+                                    <option value="5.0">5'0"</option>
+                                    <option value="5.1">5'1"</option>
+                                    <option value="5.2">5'2"</option>
+                                    <option value="5.3">5'3"</option>
+                                    <option value="5.4">5'4"</option>
+                                    <option value="5.5">5'5"</option>
+                                    <option value="5.6">5'6"</option>
+                                    <option value="5.7">5'7"</option>
+                                    <option value="5.8">5'8"</option>
+                                    <option value="5.9">5'9"</option>
+                                    <option value="6.0">6'0"</option>
+                                    <option value="6.1">6'1"</option>
+                                    <option value="6.2">6'2"</option>
+                                    <option value="6.3">6'3"</option>
+                                    <option value="6.4">6'4"</option>
+                                    <option value="6.5">6'5"</option>
+                                    <option value="6.6">6'6"</option>
+                                    <option value="6.7">6'7"</option>
+                                    <option value="6.8">6'8"</option>
+                                    <option value="6.9">6'9"</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button id="calculateSuccess" class="calculate-btn">Calculate Success</button>
+                    </div>
+                    <div id="successResult" class="success-result"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Calculator Button -->
+    <button id="floatingCalculatorBtn" class="floating-calculator-btn">
+        <span class="btn-text">Calculate your success</span>
+    </button>
+
+    <!-- Embedded Data -->
+    <script src="embedded-data.js"></script>
+    
+    <!-- Vercel-optimized Script -->
+    <script>
+// Global variables
+let data = [];
+let globalWealthData = null;
+
+// DOM elements
+const chartCanvas = document.getElementById('wealthChart');
+const pieChartCanvas = document.getElementById('pieChart');
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, starting application...');
+    
+    // Use embedded data instead of loading CSV
+    if (typeof embeddedData !== 'undefined' && embeddedData.length > 0) {
+        console.log('✅ Using embedded data:', embeddedData.length, 'records');
+        data = embeddedData;
+        initializeChart();
+        initializePieChart();
+        initializeSuccessCalculator();
+    } else {
+        console.error('❌ No embedded data found');
+        showError('Failed to load data. Please refresh the page.');
+    }
+});
+
+// Simple wealth density calculation
+function calculateWealthDensity(data) {
+    // Group people by height (0.1ft bins)
+    const heightGroups = {};
+    
+    data.forEach(person => {
+        const heightBin = Math.round(person.height * 10) / 10; // Round to 0.1ft
+        if (!heightGroups[heightBin]) {
+            heightGroups[heightBin] = { people: [], totalWealth: 0 };
+        }
+        heightGroups[heightBin].people.push(person);
+        heightGroups[heightBin].totalWealth += person.wealth;
+    });
+    
+    // Find max wealth for normalization
+    const maxWealth = Math.max(...Object.values(heightGroups).map(group => group.totalWealth));
+    
+    // Create density map and top names for each height
+    const densityMap = {};
+    const topNamesByHeight = {};
+    
+    Object.keys(heightGroups).forEach(height => {
+        densityMap[height] = heightGroups[height].totalWealth / maxWealth;
+        
+        // Get top 3 wealthiest people at this height
+        const top3 = heightGroups[height].people
+            .sort((a, b) => b.wealth - a.wealth)
+            .slice(0, 3)
+            .map(person => person.name);
+        
+        topNamesByHeight[height] = top3;
+    });
+    
+    console.log('📊 Wealth density calculated:');
+    console.log('Max wealth:', maxWealth);
+    console.log('Top 3 wealthiest heights:', Object.entries(densityMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3));
+    
+    return { densityMap, heightGroups, maxWealth, topNamesByHeight };
+}
+
+// Create wealth density heatmap background plugin
+const wealthDensityHeatmapPlugin = {
+    id: 'wealthDensityHeatmap',
+    beforeDraw: function(chart) {
+        if (!globalWealthData) return;
+        
+        const ctx = chart.ctx;
+        const chartArea = chart.chartArea;
+        const densityMap = globalWealthData.densityMap;
+        
+        // Create vertical gradient based on wealth density
+        const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+        
+        // Create gradient stops for each height bin
+        const sortedHeights = Object.keys(densityMap).sort((a, b) => parseFloat(a) - parseFloat(b));
+        sortedHeights.forEach((height, index) => {
+            const position = index / (sortedHeights.length - 1);
+            const density = densityMap[height];
+            
+            // Create HSL color: green (low density) to red (high density)
+            const hue = Math.floor((1 - density) * 60); // 60 (green) to 0 (red)
+            const saturation = 85 + (density * 15);
+            const lightness = 45 + (density * 15);
+            
+            gradient.addColorStop(position, `hsla(${hue}, ${saturation}%, ${lightness}%, 0.1)`);
+        });
+        
+        ctx.save();
+        ctx.fillStyle = gradient;
+        ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, chartArea.height);
+        ctx.restore();
+    }
+};
+
+// Initialize main scatter plot chart
+function initializeChart() {
+    console.log('🎯 Initializing chart with', data.length, 'data points...');
+    
+    if (!chartCanvas) {
+        console.error('Chart canvas not found');
+        showError('Chart canvas not found. Please refresh the page.');
+        return;
+    }
+    
+    const ctx = chartCanvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get 2D context from canvas');
+        showError('Could not initialize chart. Please refresh the page.');
+        return;
+    }
+    
+    // Calculate wealth density
+    const wealthData = calculateWealthDensity(data);
+    
+    // Store globally for success calculator
+    globalWealthData = wealthData;
+    
+    // Create heatmap dataset with proper color gradient
+    const chartData = data.map(person => {
+        const heightBin = Math.round(person.height * 10) / 10;
+        const wealthDensity = wealthData.densityMap[heightBin] || 0;
+        
+        // Create HSL color based on wealth density: green → yellow → orange → red
+        const hue = Math.floor((1 - wealthDensity) * 60); // 60 (green) to 0 (red)
+        const saturation = 85 + (wealthDensity * 15); // 85% to 100% saturation
+        const lightness = 45 + (wealthDensity * 15); // 45% to 60% lightness
+        
+        return {
+            x: person.wealth,
+            y: person.height,
+            name: person.name,
+            status: person.status,
+            source: person.source,
+            backgroundColor: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+            borderColor: `hsl(${hue}, ${Math.min(100, saturation + 10)}%, ${Math.max(40, lightness - 5)}%)`
+        };
+    });
+    
+    console.log('📊 Chart data created with individual colors');
+    
+    // Create chart with custom tooltip
+    new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Height vs Wealth',
+                data: chartData,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                showLine: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 3000,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Height vs. Wealth',
+                    font: {
+                        family: 'Helvetica Neue, Helvetica, Arial, sans-serif',
+                        size: 18,
+                        weight: 'bold'
+                    },
+                    color: '#ffffff',
+                    padding: 20
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: true,
+                    mode: 'point',
+                    intersect: false,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderWidth: 1,
+                    callbacks: {
+                        title: function(context) {
+                            const point = context[0];
+                            return point.raw.name || 'Unknown';
+                        },
+                        label: function(context) {
+                            const point = context.raw;
+                            const wealthFormatted = new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            }).format(point.x);
+                            
+                            return [
+                                `Height: ${point.y}ft`,
+                                `Wealth: ${wealthFormatted}`,
+                                `Status: ${point.status}`,
+                                `Source: ${point.source}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'logarithmic',
+                    position: 'bottom',
+                    title: {
+                        display: true,
+                        text: 'Net Worth (USD)',
+                        font: {
+                            family: 'Helvetica Neue, Helvetica, Arial, sans-serif',
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        color: '#ffffff'
+                    },
+                    ticks: {
+                        font: {
+                            family: 'Helvetica Neue, Helvetica, Arial, sans-serif'
+                        },
+                        color: '#ffffff',
+                        callback: function(value) {
+                            if (value >= 1000000000) {
+                                return '$' + (value / 1000000000).toFixed(0) + 'B';
+                            } else if (value >= 1000000) {
+                                return '$' + (value / 1000000).toFixed(0) + 'M';
+                            } else if (value >= 1000) {
+                                return '$' + (value / 1000).toFixed(0) + 'K';
+                            }
+                            return '$' + value;
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Height (ft)',
+                        font: {
+                            family: 'Helvetica Neue, Helvetica, Arial, sans-serif',
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        color: '#ffffff'
+                    },
+                    ticks: {
+                        font: {
+                            family: 'Helvetica Neue, Helvetica, Arial, sans-serif'
+                        },
+                        color: '#ffffff',
+                        callback: function(value) {
+                            return value.toFixed(1) + 'ft';
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    min: 4.5,
+                    max: 7.0
+                }
+            }
+        },
+        plugins: [wealthDensityHeatmapPlugin]
+    });
+    
+    console.log('✅ Chart initialized successfully');
+}
+
+// Initialize pie chart
+function initializePieChart() {
+    console.log('🥧 Initializing pie chart...');
+    
+    if (!pieChartCanvas) {
+        console.error('Pie chart canvas not found');
+        return;
+    }
+    
+    const ctx = pieChartCanvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get 2D context from pie chart canvas');
+        return;
+    }
+    
+    // Group data by height ranges
+    const heightRanges = {
+        '4.9-5.2ft': { min: 4.9, max: 5.2, totalWealth: 0, count: 0 },
+        '5.3-5.6ft': { min: 5.3, max: 5.6, totalWealth: 0, count: 0 },
+        '5.7-6.0ft': { min: 5.7, max: 6.0, totalWealth: 0, count: 0 },
+        '6.1-6.4ft': { min: 6.1, max: 6.4, totalWealth: 0, count: 0 },
+        '6.5-6.9ft': { min: 6.5, max: 6.9, totalWealth: 0, count: 0 }
+    };
+    
+    // Calculate total wealth for each height range
+    data.forEach(person => {
+        Object.keys(heightRanges).forEach(range => {
+            const rangeData = heightRanges[range];
+            if (person.height >= rangeData.min && person.height <= rangeData.max) {
+                rangeData.totalWealth += person.wealth;
+                rangeData.count++;
+            }
+        });
+    });
+    
+    // Create chart data
+    const chartData = Object.entries(heightRanges)
+        .filter(([range, data]) => data.totalWealth > 0)
+        .map(([range, data]) => ({
+            label: range,
+            value: data.totalWealth,
+            count: data.count
+        }))
+        .sort((a, b) => b.value - a.value);
+    
+    console.log('📊 Pie chart data:', chartData);
+    
+    // Create colors
+    const colors = [
+        'rgba(74, 222, 128, 0.8)',   // Green
+        'rgba(251, 191, 36, 0.8)',   // Yellow
+        'rgba(245, 158, 11, 0.8)',   // Orange
+        'rgba(249, 115, 22, 0.8)',   // Red-orange
+        'rgba(239, 68, 68, 0.8)'     // Red
+    ];
+    
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: chartData.map(item => item.label),
+            datasets: [{
+                data: chartData.map(item => item.value),
+                backgroundColor: colors.slice(0, chartData.length),
+                borderColor: colors.slice(0, chartData.length).map(color => color.replace('0.8', '1')),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Wealth Distribution by Height',
+                    font: {
+                        family: 'Helvetica Neue, Helvetica, Arial, sans-serif',
+                        size: 18,
+                        weight: 'bold'
+                    },
+                    color: '#ffffff',
+                    padding: 20
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: {
+                            family: 'Helvetica Neue, Helvetica, Arial, sans-serif',
+                            size: 12
+                        },
+                        color: '#ffffff',
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const item = chartData[context.dataIndex];
+                            const percentage = ((item.value / chartData.reduce((sum, d) => sum + d.value, 0)) * 100).toFixed(1);
+                            const wealthFormatted = new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            }).format(item.value);
+                            
+                            return [
+                                `${item.label}: ${percentage}%`,
+                                `Total Wealth: ${wealthFormatted}`,
+                                `People: ${item.count}`
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    console.log('✅ Pie chart initialized successfully');
+}
+
+// Initialize success calculator
+function initializeSuccessCalculator() {
+    console.log('🧮 Initializing success calculator...');
+    
+    const floatingBtn = document.getElementById('floatingCalculatorBtn');
+    const calculateBtn = document.getElementById('calculateSuccess');
+    
+    if (floatingBtn) {
+        floatingBtn.addEventListener('click', function() {
+            document.querySelector('.success-calculator-section').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+        });
+    }
+    
+    if (calculateBtn) {
+        calculateBtn.addEventListener('click', calculateSuccessProbability);
+    }
+    
+    const heightSelect = document.getElementById('heightSelect');
+    if (heightSelect) {
+        heightSelect.addEventListener('change', function() {
+            if (this.value) {
+                calculateSuccessProbability();
+            }
+        });
+    }
+    
+    console.log('✅ Success calculator initialized');
+}
+
+// Calculate success probability based on height
+function calculateSuccessProbability() {
+    const heightSelect = document.getElementById('heightSelect');
+    const successResult = document.getElementById('successResult');
+    
+    if (!heightSelect || !successResult || !globalWealthData) {
+        console.error('Missing elements or data for success calculation');
+        return;
+    }
+    
+    const heightInFeet = parseFloat(heightSelect.value);
+    
+    if (!heightInFeet || heightInFeet <= 0) {
+        successResult.innerHTML = `
+            <div style="color: #ff6b6b;">
+                <strong>⚠️ Please select your height!</strong><br>
+                Choose your height from the dropdown above.
+            </div>
+        `;
+        successResult.classList.add('show');
+        return;
+    }
+    
+    // Round to nearest 0.1ft for lookup
+    const heightBin = Math.round(heightInFeet * 10) / 10;
+    
+    // Get wealth density for this height
+    const wealthDensity = globalWealthData.densityMap[heightBin] || 0;
+    
+    // Get top 3 names for this height
+    const topNames = globalWealthData.topNamesByHeight[heightBin] || [];
+    
+    // Calculate success probability (0-100%)
+    const successProbability = Math.round(wealthDensity * 100);
+    
+    // Generate result message
+    let resultHTML = '';
+    
+    if (successProbability >= 80) {
+        resultHTML = `
+            <div style="color: #ffffff;">
+                <div style="font-size: 2.5rem; margin-bottom: 1.5rem; color: #4ade80;">🎯</div>
+                <div style="font-size: 1.8rem; font-weight: 700; color: #4ade80; margin-bottom: 1.5rem; line-height: 1.2;">EXCELLENT SUCCESS POTENTIAL!</div>
+                <div style="background: rgba(74, 222, 128, 0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #4ade80;">
+                    <div style="font-size: 1.3rem; font-weight: 600; color: #ffffff; margin-bottom: 0.5rem;">Success Probability: <span style="color: #4ade80;">${successProbability}%</span></div>
+                    ${topNames.length > 0 ? `<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Top at this height: ${topNames.join(', ')}</div>` : ''}
+                </div>
+            </div>
+        `;
+    } else if (successProbability >= 60) {
+        resultHTML = `
+            <div style="color: #ffffff;">
+                <div style="font-size: 2.5rem; margin-bottom: 1.5rem; color: #fbbf24;">⭐</div>
+                <div style="font-size: 1.8rem; font-weight: 700; color: #fbbf24; margin-bottom: 1.5rem; line-height: 1.2;">STRONG SUCCESS POTENTIAL!</div>
+                <div style="background: rgba(251, 191, 36, 0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #fbbf24;">
+                    <div style="font-size: 1.3rem; font-weight: 600; color: #ffffff; margin-bottom: 0.5rem;">Success Probability: <span style="color: #fbbf24;">${successProbability}%</span></div>
+                    ${topNames.length > 0 ? `<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Top at this height: ${topNames.join(', ')}</div>` : ''}
+                </div>
+            </div>
+        `;
+    } else if (successProbability >= 40) {
+        resultHTML = `
+            <div style="color: #ffffff;">
+                <div style="font-size: 2.5rem; margin-bottom: 1.5rem; color: #f59e0b;">📈</div>
+                <div style="font-size: 1.8rem; font-weight: 700; color: #f59e0b; margin-bottom: 1.5rem; line-height: 1.2;">MODERATE SUCCESS POTENTIAL</div>
+                <div style="background: rgba(245, 158, 11, 0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #f59e0b;">
+                    <div style="font-size: 1.3rem; font-weight: 600; color: #ffffff; margin-bottom: 0.5rem;">Success Probability: <span style="color: #f59e0b;">${successProbability}%</span></div>
+                    ${topNames.length > 0 ? `<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Top at this height: ${topNames.join(', ')}</div>` : ''}
+                </div>
+            </div>
+        `;
+    } else if (successProbability >= 20) {
+        resultHTML = `
+            <div style="color: #ffffff;">
+                <div style="font-size: 2.5rem; margin-bottom: 1.5rem; color: #f97316;">💪</div>
+                <div style="font-size: 1.8rem; font-weight: 700; color: #f97316; margin-bottom: 1.5rem; line-height: 1.2;">CHALLENGING BUT POSSIBLE</div>
+                <div style="background: rgba(249, 115, 22, 0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #f97316;">
+                    <div style="font-size: 1.3rem; font-weight: 600; color: #ffffff; margin-bottom: 0.5rem;">Success Probability: <span style="color: #f97316;">${successProbability}%</span></div>
+                    ${topNames.length > 0 ? `<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Top at this height: ${topNames.join(', ')}</div>` : ''}
+                </div>
+            </div>
+        `;
+    } else {
+        resultHTML = `
+            <div style="color: #ffffff;">
+                <div style="font-size: 2.5rem; margin-bottom: 1.5rem; color: #8b5cf6;">🚀</div>
+                <div style="font-size: 1.8rem; font-weight: 700; color: #8b5cf6; margin-bottom: 1.5rem; line-height: 1.2;">UNDERDOG SUCCESS STORY WAITING TO HAPPEN!</div>
+                <div style="background: rgba(139, 92, 246, 0.1); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #8b5cf6;">
+                    <div style="font-size: 1.3rem; font-weight: 600; color: #ffffff; margin-bottom: 0.5rem;">Success Probability: <span style="color: #8b5cf6;">${successProbability}%</span></div>
+                    ${topNames.length > 0 ? `<div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Top at this height: ${topNames.join(', ')}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add "How it's calculated" button
+    resultHTML += `
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <button onclick="window.open('https://matiks.com', '_blank')" style="
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 8px;
+                color: rgba(255, 255, 255, 0.9);
+                padding: 0.75rem 1.5rem;
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 0.9rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-decoration: none;
+                display: inline-block;
+            " onmouseover="this.style.background='rgba(255, 255, 255, 0.2)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.1)'">
+                How it's calculated
+            </button>
+        </div>
+    `;
+    
+    successResult.innerHTML = resultHTML;
+    successResult.classList.add('show');
+    
+    // Scroll to result
+    successResult.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'nearest'
+    });
+}
+
+// Error handling function
+function showError(message) {
+    const container = document.querySelector('.container');
+    if (container) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #ff6b6b;">
+                <h2>⚠️ Error</h2>
+                <p>${message}</p>
+                <button onclick="location.reload()" style="
+                    background: #4ade80;
+                    color: white;
+                    border: none;
+                    padding: 0.5rem 1rem;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    margin-top: 1rem;
+                ">Retry</button>
+            </div>
+        `;
+    }
+}
+
+console.log('🚀 Vercel-optimized Height Wealth Analyzer loaded');
+    </script>
+</body>
+</html>
