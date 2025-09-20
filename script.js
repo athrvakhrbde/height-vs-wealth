@@ -605,10 +605,11 @@ function initializeSuccessCalculator() {
     const heightSelect = document.getElementById('heightSelect');
     const successResult = document.getElementById('successResult');
     
-    if (calculateBtn && heightSelect && successResult) {
-        calculateBtn.addEventListener('click', () => {
-            calculateSuccessProbability();
-        });
+     if (calculateBtn && heightSelect && successResult) {
+         calculateBtn.addEventListener('click', () => {
+             console.log('Calculate button clicked');
+             calculateSuccessProbability();
+         });
         
         // Also calculate when dropdown selection changes
         heightSelect.addEventListener('change', () => {
@@ -621,8 +622,11 @@ function initializeSuccessCalculator() {
 
 // Calculate success probability based on height
 function calculateSuccessProbability() {
+    console.log('calculateSuccessProbability called');
     const heightSelect = document.getElementById('heightSelect');
     const successResult = document.getElementById('successResult');
+    
+    console.log('Elements found:', { heightSelect: !!heightSelect, successResult: !!successResult, globalWealthData: !!globalWealthData });
     
     if (!heightSelect || !successResult || !globalWealthData) {
         console.error('Missing elements or data for success calculation');
