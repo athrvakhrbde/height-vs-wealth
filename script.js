@@ -384,34 +384,63 @@ function initializeChart() {
                     if (!tooltip) {
                         tooltip = document.createElement('div');
                         tooltip.id = 'chart-tooltip';
-                        tooltip.style.cssText = `
-                            position: fixed;
-                            background: rgba(0, 0, 0, 0.9);
-                            color: white;
-                            padding: 12px;
-                            border-radius: 8px;
-                            border: 2px solid #00d4ff;
-                            font-size: 14px;
-                            z-index: 10000;
-                            pointer-events: none;
-                            font-family: 'Segoe UI', sans-serif;
-                            max-width: 300px;
-                            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-                        `;
+                         const isMobile = window.innerWidth <= 768;
+                         tooltip.style.cssText = `
+                             position: fixed;
+                             background: rgba(0, 0, 0, 0.9);
+                             color: white;
+                             padding: ${isMobile ? '8px' : '12px'};
+                             border-radius: 8px;
+                             border: 2px solid #00d4ff;
+                             font-size: ${isMobile ? '12px' : '14px'};
+                             z-index: 10000;
+                             pointer-events: none;
+                             font-family: 'Segoe UI', sans-serif;
+                             max-width: ${isMobile ? '250px' : '300px'};
+                             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+                         `;
                         document.body.appendChild(tooltip);
                     }
                     
-                    tooltip.innerHTML = `
-                        <div style="font-weight: bold; color: #00d4ff; margin-bottom: 4px;">${pointData.name}</div>
-                        <div>Wealth: $${formatNumber(pointData.x)}</div>
-                        <div>Height: ${pointData.y.toFixed(1)} ft</div>
-                        <div>Status: ${pointData.status || 'Unknown'}</div>
-                        <div>Source: ${pointData.source || 'Unknown'}</div>
-                    `;
-                    
-                    tooltip.style.left = (event.clientX + 10) + 'px';
-                    tooltip.style.top = (event.clientY - 10) + 'px';
-                    tooltip.style.display = 'block';
+                     tooltip.innerHTML = `
+                         <div style="font-weight: bold; color: #00d4ff; margin-bottom: 4px;">${pointData.name}</div>
+                         <div>Wealth: $${formatNumber(pointData.x)}</div>
+                         <div>Height: ${pointData.y.toFixed(1)} ft</div>
+                         <div>Status: ${pointData.status || 'Unknown'}</div>
+                         <div>Source: ${pointData.source || 'Unknown'}</div>
+                     `;
+                     
+                     // Smart positioning to keep tooltip on screen
+                     const tooltipRect = tooltip.getBoundingClientRect();
+                     const viewportWidth = window.innerWidth;
+                     const viewportHeight = window.innerHeight;
+                     
+                     let left = event.clientX + 10;
+                     let top = event.clientY - 10;
+                     
+                     // Adjust horizontal position if tooltip would go off-screen
+                     if (left + 300 > viewportWidth) {
+                         left = event.clientX - 310; // Show to the left of cursor
+                     }
+                     
+                     // Adjust vertical position if tooltip would go off-screen
+                     if (top + 150 > viewportHeight) {
+                         top = event.clientY - 160; // Show above cursor
+                     }
+                     
+                     // Ensure tooltip doesn't go above viewport
+                     if (top < 10) {
+                         top = 10;
+                     }
+                     
+                     // Ensure tooltip doesn't go left of viewport
+                     if (left < 10) {
+                         left = 10;
+                     }
+                     
+                     tooltip.style.left = left + 'px';
+                     tooltip.style.top = top + 'px';
+                     tooltip.style.display = 'block';
                 }
             } else {
                 chartCanvas.style.cursor = 'default';
