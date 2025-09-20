@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Height vs. Wealth Analyzer - Discover Your Success Potential</title>
+    <meta name="description" content="Interactive analysis of height vs wealth correlation using real data from 3000+ billionaires and famous individuals. Calculate your success probability based on height.">
+    <meta name="keywords" content="height, wealth, correlation, billionaires, success, data visualization, interactive charts">
+    <meta name="author" content="Height Wealth Analyzer">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Height vs. Wealth Analyzer">
+    <meta property="og:description" content="Discover the correlation between height and wealth using real billionaire data">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yourdomain.com">
+    <meta property="og:image" content="https://yourdomain.com/og-image.jpg">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Height vs. Wealth Analyzer">
+    <meta name="twitter:description" content="Discover the correlation between height and wealth using real billionaire data">
+    <meta name="twitter:image" content="https://yourdomain.com/og-image.jpg">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;0,700;1,400&display=swap" as="style">
+    <link rel="preload" href="/dist/styles.min.css" as="style">
+    <link rel="preload" href="/dist/script.min.js" as="script">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;0,700;1,400&display=swap">
+    <link rel="stylesheet" href="/dist/styles.min.css">
+    
+    <!-- Google Analytics (Uncomment and add your GA ID) -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'GA_MEASUREMENT_ID');
+    </script> -->
+    
+    <!-- Hotjar (Uncomment and add your Hotjar ID) -->
+    <!-- <script>
+        (function(h,o,t,j,a,r){
+            h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+            h._hjSettings={hjid:YOUR_HOTJAR_ID,hjsv:6};
+            a=o.getElementsByTagName('head')[0];
+            r=o.createElement('script');r.async=1;
+            r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+            a.appendChild(r);
+        })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+    </script> -->
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="main-title">Co-relation between height & wealth/fame</h1>
+            <p class="subtitle">Interactive analysis using real data from 3000+ billionaires and famous individuals</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <!-- Scatter Plot Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h2 class="chart-title">Height vs. Wealth</h2>
+                    <p class="chart-description">Each dot represents a wealthy individual. Color intensity shows wealth density at that height.</p>
+                </div>
+                <canvas id="scatterChart" width="800" height="400"></canvas>
+            </div>
+
+            <!-- Pie Chart -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h2 class="chart-title">Wealth Distribution by Height</h2>
+                    <p class="chart-description">Percentage of total wealth held by people of different heights.</p>
+                </div>
+                <canvas id="pieChart" width="600" height="400"></canvas>
+            </div>
+        </div>
+
+        <!-- Success Calculator Section -->
+        <div class="success-calculator-section">
+            <div class="calculator-container">
+                <h2 class="calculator-title">Calculate Your Success Probability</h2>
+                <div class="calculator-form">
+                    <div class="input-group">
+                        <label for="heightSelect">Select your height:</label>
+                        <div class="height-input-wrapper">
+                            <select id="heightSelect" class="height-dropdown">
+                                <option value="">Choose your height</option>
+                                <option value="4.9">4'9"</option>
+                                <option value="5.0">5'0"</option>
+                                <option value="5.1">5'1"</option>
+                                <option value="5.2">5'2"</option>
+                                <option value="5.3">5'3"</option>
+                                <option value="5.4">5'4"</option>
+                                <option value="5.5">5'5"</option>
+                                <option value="5.6">5'6"</option>
+                                <option value="5.7">5'7"</option>
+                                <option value="5.8">5'8"</option>
+                                <option value="5.9">5'9"</option>
+                                <option value="6.0">6'0"</option>
+                                <option value="6.1">6'1"</option>
+                                <option value="6.2">6'2"</option>
+                                <option value="6.3">6'3"</option>
+                                <option value="6.4">6'4"</option>
+                                <option value="6.5">6'5"</option>
+                                <option value="6.6">6'6"</option>
+                                <option value="6.7">6'7"</option>
+                                <option value="6.8">6'8"</option>
+                                <option value="6.9">6'9"</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="calculateSuccess" class="calculate-btn">Calculate Success</button>
+                </div>
+                <div id="successResult" class="success-result"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Floating Calculator Button -->
+    <button id="floatingCalculatorBtn" class="floating-calculator-btn">
+        <span class="btn-text">Calculate your success</span>
+    </button>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="/dist/script.min.js"></script>
+</body>
+</html>
