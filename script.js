@@ -14,61 +14,90 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeSuccessCalculator();
 });
 
-// Load and parse CSV data
+// Load data (CSV for local, embedded for production)
 function loadCSVData() {
-    console.log('Loading CSV data...');
+    console.log('Loading data...');
     
     try {
-        Papa.parse('famous_wealthy_people.csv', {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                console.log('CSV parsing complete, rows:', results.data.length);
-                
-                // Process and filter data
-                data = results.data
-                    .map(row => {
-                        const height_cm = parseFloat(row.Height_cm);
-                        const height_ft = Math.round((height_cm / 30.48) * 100) / 100;
-                        const wealth = parseFloat(row.Net_Worth_USD);
-                        
-                        return {
-                            name: row.Name || 'Unknown',
-                            wealth: wealth,
-                            height: height_ft,
-                            status: row.Status || 'Unknown',
-                            source: row.Source_of_Wealth || 'Unknown'
-                        };
-                    })
-                    .filter(person => 
-                        person.wealth > 0 && 
-                        person.height >= 4.9 && 
-                        person.height <= 6.9 &&
-                        person.name !== 'Unknown'
-                    );
-                
-                console.log(`✅ Loaded ${data.length} valid records`);
-                console.log('Sample data:', data.slice(0, 3));
-                
-                if (data.length === 0) {
-                    console.error('No valid data found');
-                    showError('No valid data found in CSV file.');
-                    return;
+        // Check if we're in production (Vercel) or local development
+        const isProduction = window.location.hostname !== 'localhost' && 
+                           window.location.hostname !== '127.0.0.1' &&
+                           !window.location.hostname.includes('localhost');
+        
+        if (isProduction && window.embeddedData) {
+            // Use embedded data for production
+            console.log('Using embedded data for production');
+            processData(window.embeddedData);
+        } else {
+            // Use CSV for local development
+            console.log('Loading CSV data for local development');
+            Papa.parse('famous_wealthy_people.csv', {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    console.log('CSV parsing complete, rows:', results.data.length);
+                    processData(results.data);
+                },
+                error: function(error) {
+                    console.error('Error parsing CSV:', error);
+                    // Fallback to embedded data if CSV fails
+                    if (window.embeddedData) {
+                        console.log('Falling back to embedded data');
+                        processData(window.embeddedData);
+                    } else {
+                        showError('Failed to load data. Please refresh the page.');
+                    }
                 }
-                
-                initializeChart();
-                initializePieChart();
-            },
-            error: function(error) {
-                console.error('Error parsing CSV:', error);
-                showError('Failed to parse CSV data. Please check the file format.');
-            }
-        });
+            });
+        }
     } catch (error) {
-        console.error('Error loading CSV:', error);
-        showError('Failed to load data. Please check if the CSV file exists.');
+        console.error('Error loading data:', error);
+        // Final fallback to embedded data
+        if (window.embeddedData) {
+            console.log('Using embedded data as fallback');
+            processData(window.embeddedData);
+        } else {
+            showError('Failed to load data. Please check if the data file exists.');
+        }
     }
+}
+
+// Process data (common function for both CSV and embedded data)
+function processData(rawData) {
+    // Process and filter data
+    data = rawData
+        .map(row => {
+            const height_cm = parseFloat(row.Height_cm);
+            const height_ft = Math.round((height_cm / 30.48) * 100) / 100;
+            const wealth = parseFloat(row.Net_Worth_USD);
+            
+            return {
+                name: row.Name || 'Unknown',
+                wealth: wealth,
+                height: height_ft,
+                status: row.Status || 'Unknown',
+                source: row.Source_of_Wealth || 'Unknown'
+            };
+        })
+        .filter(person => 
+            person.wealth > 0 && 
+            person.height >= 4.9 && 
+            person.height <= 6.9 &&
+            person.name !== 'Unknown'
+        );
+    
+    console.log(`✅ Loaded ${data.length} valid records`);
+    console.log('Sample data:', data.slice(0, 3));
+    
+    if (data.length === 0) {
+        console.error('No valid data found');
+        showError('No valid data found.');
+        return;
+    }
+    
+    initializeChart();
+    initializePieChart();
 }
 
 // Simple wealth density calculation
