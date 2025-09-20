@@ -607,7 +607,6 @@ function initializeSuccessCalculator() {
     
      if (calculateBtn && heightSelect && successResult) {
          calculateBtn.addEventListener('click', () => {
-             console.log('Calculate button clicked');
              calculateSuccessProbability();
          });
         
@@ -622,11 +621,8 @@ function initializeSuccessCalculator() {
 
 // Calculate success probability based on height
 function calculateSuccessProbability() {
-    console.log('calculateSuccessProbability called');
     const heightSelect = document.getElementById('heightSelect');
     const successResult = document.getElementById('successResult');
-    
-    console.log('Elements found:', { heightSelect: !!heightSelect, successResult: !!successResult, globalWealthData: !!globalWealthData });
     
     if (!heightSelect || !successResult || !globalWealthData) {
         console.error('Missing elements or data for success calculation');
@@ -664,7 +660,7 @@ function calculateSuccessProbability() {
     // Get height ranking
     const allHeights = Object.entries(globalWealthData.densityMap)
         .sort((a, b) => b[1] - a[1]);
-    const heightRank = allHeights.findIndex(([height]) => parseFloat(height) === heightBin) + 1;
+    const heightRank = allHeights.findIndex(([height]) => parseFloat(height) === closestHeight) + 1;
     const totalHeights = allHeights.length;
     
     // Generate result message
