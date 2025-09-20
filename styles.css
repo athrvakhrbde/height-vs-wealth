@@ -322,7 +322,7 @@ canvas {
     .charts-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
     }
     
     .chart-container {
@@ -330,6 +330,10 @@ canvas {
         padding: 1rem;
         width: 100%;
         overflow: hidden;
+    }
+    
+    .chart-container:first-child {
+        height: 500px;
     }
     
     .calculator-title {
@@ -394,6 +398,10 @@ canvas {
     .chart-container {
         height: 350px;
         padding: 0.8rem;
+    }
+    
+    .chart-container:first-child {
+        height: 450px;
     }
     
     .calculator-title {
