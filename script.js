@@ -642,14 +642,17 @@ function calculateSuccessProbability() {
         return;
     }
     
-    // Round to nearest 0.1ft for lookup
-    const heightBin = Math.round(heightInFeet * 10) / 10;
-    
-    // Get wealth density for this height
-    const wealthDensity = globalWealthData.densityMap[heightBin] || 0;
-    
-    // Get top 3 names for this height
-    const topNames = globalWealthData.topNamesByHeight[heightBin] || [];
+     // Find the closest height bin in the data
+     const availableHeights = Object.keys(globalWealthData.densityMap).map(h => parseFloat(h));
+     const closestHeight = availableHeights.reduce((closest, current) => 
+         Math.abs(current - heightInFeet) < Math.abs(closest - heightInFeet) ? current : closest
+     );
+     
+     // Get wealth density for the closest height
+     const wealthDensity = globalWealthData.densityMap[closestHeight] || 0;
+     
+     // Get top 3 names for the closest height
+     const topNames = globalWealthData.topNamesByHeight[closestHeight] || [];
     
     // Calculate success probability (0-100%)
     const successProbability = Math.round(wealthDensity * 100);
