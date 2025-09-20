@@ -410,32 +410,31 @@ function initializeChart() {
                          <div>Source: ${pointData.source || 'Unknown'}</div>
                      `;
                      
-                     // Smart positioning to keep tooltip on screen
-                     const tooltipRect = tooltip.getBoundingClientRect();
+                     // Aggressive positioning to prevent overflow
                      const viewportWidth = window.innerWidth;
                      const viewportHeight = window.innerHeight;
+                     const isMobile = window.innerWidth <= 768;
+                     const tooltipWidth = isMobile ? 250 : 300;
+                     const tooltipHeight = isMobile ? 120 : 150;
                      
                      let left = event.clientX + 10;
                      let top = event.clientY - 10;
                      
-                     // Adjust horizontal position if tooltip would go off-screen
-                     if (left + 300 > viewportWidth) {
-                         left = event.clientX - 310; // Show to the left of cursor
+                     // Force tooltip to stay within viewport bounds
+                     if (left + tooltipWidth > viewportWidth - 10) {
+                         left = viewportWidth - tooltipWidth - 10;
                      }
                      
-                     // Adjust vertical position if tooltip would go off-screen
-                     if (top + 150 > viewportHeight) {
-                         top = event.clientY - 160; // Show above cursor
+                     if (top + tooltipHeight > viewportHeight - 10) {
+                         top = viewportHeight - tooltipHeight - 10;
                      }
                      
-                     // Ensure tooltip doesn't go above viewport
-                     if (top < 10) {
-                         top = 10;
-                     }
-                     
-                     // Ensure tooltip doesn't go left of viewport
                      if (left < 10) {
                          left = 10;
+                     }
+                     
+                     if (top < 10) {
+                         top = 10;
                      }
                      
                      tooltip.style.left = left + 'px';
